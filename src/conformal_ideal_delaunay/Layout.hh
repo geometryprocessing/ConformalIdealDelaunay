@@ -40,6 +40,23 @@
 #ifdef WITH_MPFR
 #include <unsupported/Eigen/MPRealSupport>
 #endif
+
+
+// get the number of cut_edges touching to[h0]
+int count_valence(const std::vector<int> &n, const std::vector<int> &opp, int h0, std::vector<bool> is_cut)
+{
+  int valence = 0;
+  int hi = opp[n[h0]];
+  if (is_cut[h0]) 
+    valence = 1;
+  while (hi != h0)
+  {
+    if (is_cut[hi])
+      valence++;
+    hi = opp[n[hi]];
+  }
+  return valence;
+}
 /**
 * Given a metric defined by original edge lengths and scale factor u, do a bfs on dual graph of mesh or 
 * using given cuts to singularities defined in is_cut_h to compute per-corner u, v coordinates
@@ -210,16 +227,13 @@ compute_layout(Mesh<Scalar> &m, const std::vector<Scalar> &u, std::vector<bool>&
     }
   }
 
-  if (!cut_given)
-    return std::make_tuple(_u, _v, is_cut_h_gen);
-  else
-    return std::make_tuple(_u, _v, is_cut_h);
+  return std::make_tuple(_u, _v, is_cut_h_gen);
   
 };
 
 template <typename Scalar>
 std::tuple<std::vector<Scalar>, std::vector<Scalar>, std::vector<bool>,
-           std::vector<Scalar>, std::vector<Scalar>, std::vector<bool>> get_layout(OverlayMesh<Scalar> &m_o, const std::vector<Scalar> &u_vec, std::vector<int> bd, std::vector<int> singularities)
+           std::vector<Scalar>, std::vector<Scalar>, std::vector<bool>> get_layout(OverlayMesh<Scalar> &m_o, const std::vector<Scalar> &u_vec, std::vector<int> bd, std::vector<int> singularities, bool do_trim = false)
 {
   auto m = m_o.cmesh();
   m_o.garbage_collection();
@@ -378,9 +392,43 @@ std::tuple<std::vector<Scalar>, std::vector<Scalar>, std::vector<bool>,
     auto u_o = m_o.interpolate_along_c_bc(m.n, m.f, u_scalar);
     auto v_o = m_o.interpolate_along_c_bc(m.n, m.f, v_scalar);
 
+    // mark boundary as cut
+    auto f_labels = get_overlay_face_labels(m_o);
+    for (int i = 0; i < is_cut_o.size(); i++)
+    {
+        if (f_labels[m_o.f[i]] != f_labels[m_o.f[m_o.opp[i]]])
+        {
+            is_cut_o[i] = true;
+        }
+    }
+    if (do_trim)
+    {
+      is_cut = std::get<2>(layout_res);
+      is_cut_o = m_o.interpolate_is_cut_h(is_cut);
+      bool any_trimmed = true;
+      while (any_trimmed)
+      {
+        any_trimmed = false;
+        for (int hi = 0; hi < m_o.n.size(); hi++)
+        {
+          if (!is_cut_o[hi] || f_labels[m_o.f[hi]] == 2) 
+            continue;
+          int v0 = m_o.to[hi];
+          int v1 = m_o.to[m_o.opp[hi]];
+          if (std::find(singularities.begin(), singularities.end(), v0) != singularities.end() || std::find(singularities.begin(), singularities.end(), v1) != singularities.end())
+            continue;
+          if (count_valence(m_o.n, m_o.opp, hi, is_cut_o) == 1 || count_valence(m_o.n, m_o.opp, m_o.opp[hi], is_cut_o) == 1)
+          {
+            is_cut_o[hi] = false;
+            is_cut_o[m_o.opp[hi]] = false;
+            any_trimmed = true;
+          }
+        }
+      }
+    } // end of do trim
     return std::make_tuple(u_scalar,v_scalar,is_cut,u_o,v_o,is_cut_o);
   }
-  else
+  else // closed mesh
   {
     std::vector<bool> is_cut;
     auto layout_res = compute_layout(m, u_vec, is_cut);
@@ -398,6 +446,28 @@ std::tuple<std::vector<Scalar>, std::vector<Scalar>, std::vector<bool>,
 
     auto u_o = m_o.interpolate_along_c_bc(m.n, m.f, u_scalar);
     auto v_o = m_o.interpolate_along_c_bc(m.n, m.f, v_scalar);
+
+    // trim cut
+    bool any_trimmed = true;
+    while (any_trimmed)
+    {
+      any_trimmed = false;
+      for (int hi = 0; hi < m.n.size(); hi++)
+      {
+        if (!is_cut[hi]) 
+          continue;
+        int v0 = m.to[hi];
+        int v1 = m.to[m.opp[hi]];
+        if (std::find(singularities.begin(), singularities.end(), v0) != singularities.end() || std::find(singularities.begin(), singularities.end(), v1) != singularities.end())
+          continue;
+        if (count_valence(m.n, m.opp, hi, is_cut) == 1 || count_valence(m.n, m.opp, m.opp[hi], is_cut) == 1)
+        {
+          is_cut[hi] = false;
+          is_cut[m.opp[hi]] = false;
+          any_trimmed = true;
+        }
+      }
+    }
     auto is_cut_o = m_o.interpolate_is_cut_h(is_cut);
   
     return std::make_tuple(u_scalar,v_scalar,is_cut,u_o,v_o,is_cut_o);

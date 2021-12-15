@@ -501,16 +501,6 @@ get_FV_FTVT(OverlayMesh<Scalar> &mo,
     // get h_group and to_map
     std::vector<int> f_labels = get_overlay_face_labels(mo);
     
-    // modify is_cut_o
-    for (int i = 0; i < is_cut_o.size(); i++)
-    {
-        if (f_labels[mo.f[i]] != f_labels[mo.f[mo.opp[i]]])
-        {
-            is_cut_o[i] = true;
-        }
-    }   
-    
-    
     int origin_size = mo.cmesh().out.size();
     std::vector<int> h_group(mo.n.size(), -1);
     std::vector<int> to_map(origin_size, -1);
@@ -647,11 +637,11 @@ conformal_metric_CL(const Eigen::MatrixXd &V,
             bd.push_back(i);
         }
     }
+    bool do_trim = false;
     auto gb = count_genus_and_boundary(V, F);
     int n_genus = gb.first, n_bd = gb.second;
     if((n_genus >= 1 && n_bd != 0) || n_bd > 1){
-        spdlog::info("Overlay is currently only available for closed meshes and open mesh with disc topology, please use render option for preview.");
-        return std::make_tuple(std::vector<int>(), std::vector<int>(), std::vector<Scalar>());
+        do_trim = true;
     }
     for (int i = 0; i < Theta_hat.size(); i++)
     {
@@ -690,7 +680,7 @@ conformal_metric_CL(const Eigen::MatrixXd &V,
     }
 
     // get layout
-    auto layout_res = get_layout(mo, u, bd, cones);
+    auto layout_res = get_layout(mo, u, bd, cones, do_trim);
     auto u_o = std::get<3>(layout_res);
     auto v_o = std::get<4>(layout_res);
 
@@ -742,11 +732,11 @@ conformal_metric_VL(const Eigen::MatrixXd &V,
             bd.push_back(i);
         }
     }
+    bool do_trim = false;
     auto gb = count_genus_and_boundary(V, F);
     int n_genus = gb.first, n_bd = gb.second;
     if((n_genus >= 1 && n_bd != 0) || n_bd > 1){
-        spdlog::info("Overlay is currently only available for closed meshes and open mesh with disc topology, please use render option for preview.");
-        return std::make_tuple(std::vector<std::vector<Scalar>>(), std::vector<std::vector<int>>(), std::vector<std::vector<Scalar>>());
+        do_trim = true;
     }
     for (int i = 0; i < Theta_hat.size(); i++)
     {
@@ -788,7 +778,7 @@ conformal_metric_VL(const Eigen::MatrixXd &V,
     }
 
     // get layout
-    auto layout_res = get_layout(mo, u, bd, cones);
+    auto layout_res = get_layout(mo, u, bd, cones, do_trim);
     auto u_o = std::get<3>(layout_res);
     auto v_o = std::get<4>(layout_res);
     auto is_cut_o = std::get<5>(layout_res);
@@ -860,11 +850,11 @@ conformal_parametrization_CL(const Eigen::MatrixXd &V,
             bd.push_back(i);
         }
     }
+    bool do_trim = false;
     auto gb = count_genus_and_boundary(V, F);
     int n_genus = gb.first, n_bd = gb.second;
     if((n_genus >= 1 && n_bd != 0) || n_bd > 1){
-        spdlog::info("Overlay is currently only available for closed meshes and open mesh with disc topology, please use render option for preview.");
-        return std::make_tuple(std::vector<int>(), std::vector<int>(), std::vector<Scalar>(), std::vector<Scalar>());
+        do_trim = true;
     }
     for (int i = 0; i < Theta_hat.size(); i++)
     {
@@ -903,7 +893,7 @@ conformal_parametrization_CL(const Eigen::MatrixXd &V,
     }
 
     // get layout
-    auto layout_res = get_layout(mo, u, bd, cones);
+    auto layout_res = get_layout(mo, u, bd, cones, do_trim);
     auto u_o = std::get<3>(layout_res);
     auto v_o = std::get<4>(layout_res);
 
@@ -953,11 +943,11 @@ conformal_parametrization_VL(const Eigen::MatrixXd &V,
             bd.push_back(i);
         }
     }
+    bool do_trim = false;
     auto gb = count_genus_and_boundary(V, F);
     int n_genus = gb.first, n_bd = gb.second;
     if((n_genus >= 1 && n_bd != 0) || n_bd > 1){
-        spdlog::info("Overlay is currently only available for closed meshes and open mesh with disc topology, please use render option for preview.");
-        return std::make_tuple(std::vector<std::vector<Scalar>>(), std::vector<std::vector<int>>(), std::vector<Scalar>(), std::vector<Scalar>(), std::vector<std::vector<int>>());
+        do_trim = true;
     }
     for (int i = 0; i < Theta_hat.size(); i++)
     {
@@ -1003,7 +993,7 @@ conformal_parametrization_VL(const Eigen::MatrixXd &V,
     spdlog::info("mc.out size: {}", mo.cmesh().out.size());
 
     // get layout
-    auto layout_res = get_layout(mo, u, bd, cones);
+    auto layout_res = get_layout(mo, u, bd, cones, do_trim);
     auto u_o = std::get<3>(layout_res);
     auto v_o = std::get<4>(layout_res);
     auto is_cut_o = std::get<5>(layout_res);
