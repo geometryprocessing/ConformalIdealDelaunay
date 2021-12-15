@@ -58,8 +58,11 @@ jobs:
             libboost-system-dev \
             libboost-thread-dev \
             libmpfr-dev \
+            libglu1-mesa-dev \
+            freeglut3-dev \
+            mesa-common-dev \
             xorg-dev
-            
+
     - name: Dependencies (macOS)
       if: runner.os == 'macOS'
       run: brew install boost gmp mpfr
