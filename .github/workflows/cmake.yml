@@ -57,7 +57,9 @@ jobs:
             libboost-filesystem-dev \
             libboost-system-dev \
             libboost-thread-dev \
-            libmpfr-dev
+            libmpfr-dev \
+            xorg-dev
+            
     - name: Dependencies (macOS)
       if: runner.os == 'macOS'
       run: brew install boost gmp mpfr
