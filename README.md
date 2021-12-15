@@ -1,6 +1,6 @@
 # Efficient and Robust Discrete Conformal Equivalence with Boundary
 Marcel Campen, Ryan Capouellez, Hanxiao Shen, Leyi Zhu, Daniele Panozzo, Denis Zorin. ACM Transactions on Graphics (SIGGRAPH Asia 2021)
-
+![build](https://github.com/geometryprocessing/ConformalIdealDelaunay/blob/master/.github/workflows/cmake.yml/badge.svg)
 ![Examples](figures/teaser/teaser.png?raw=true "Title")
 
 ## Abstract
