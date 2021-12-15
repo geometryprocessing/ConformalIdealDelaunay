@@ -11,7 +11,7 @@ Internally, Ideal Delaunay triangulation is used to guarantee reliability.
 ## Clone
 You can clone the repo and submodules with
 ```
-git clone --recursive https://github.com/hankstag/ConformalIdealDelaunay.git
+git clone --recursive https://github.com/geometryprocessing/ConformalIdealDelaunay.git
 ```
 ## Dependencies
 [libigl](https://libigl.github.io/), [spdlog](https://github.com/gabime/spdlog) and [pybind11](https://pybind11.readthedocs.io/en/stable/) are included as submodules, [boost](https://www.boost.org/) is required to be installed by user. [pdflatex](https://www.tug.org/applications/pdftex/) is also required to use the scripts in `figures` folder to reproduce figures in the paper.
