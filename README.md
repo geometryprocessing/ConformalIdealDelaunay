@@ -96,7 +96,7 @@ Optional parameters:
 
 ### Input data format
 
-Input file is expected to be a triangular manifold mesh, possibly with multiple boundaries, in `.obj` format. And an additional text file with suffix `_Th_hat` containing (line by line) the prescribed angle per vertex. We attached three example input in `data/examples`. The compelete input data for our paper can be downloaded here: https://cims.nyu.edu/gcl/papers/2021-Conformal.zip, which also includes the camera configuration needed for rendering grid texture.
+Input file is expected to be a triangular manifold mesh, possibly with multiple boundaries, in `.obj` format. And an additional text file with suffix `_Th_hat` containing (line by line) the prescribed angle per vertex. We attached three example input in `data/examples`. The compelete input data for our paper can be downloaded [here]( https://cims.nyu.edu/gcl/papers/2021-Conformal.zip), which also includes the camera configuration needed for rendering grid texture.
 ## Reproduction
 Shell scripts to reproduce (via the python interface) the images and plots shown in the paper can be found in the figures subfolder.
 
