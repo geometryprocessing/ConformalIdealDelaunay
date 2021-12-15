@@ -1,0 +1,117 @@
+\documentclass{standalone}
+\usepackage{tikz} 
+\usepackage{comment}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{bm}
+\usepackage{color}
+\usepackage{nicefrac}
+\usepackage{dsfont}
+\usepackage[section]{placeins}
+\usepackage{tikz,pgfplots}
+\usepackage{overpic}
+\usepackage{wrapfig}
+\usepackage{rotating}
+
+\definecolor{commentgray}{gray}{0.5}
+\usepackage[ruled,vlined,noend]{algorithm2e}
+\usepackage{setspace}
+\newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{commentgray}{#1}}
+\SetCommentSty{mycommfont}
+\SetAlCapHSkip{1.1mm}
+
+%\usepackage{amssymb,amscd}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{csquotes}
+\usepackage{cleveref}
+
+\definecolor{plotblue}{HTML}{5a7daf}
+\definecolor{plotgreengreen}{HTML}{8ed659}
+\definecolor{plotgreen}{HTML}{8bc284}
+\definecolor{plotbluegreen}{HTML}{88aeaf}
+\definecolor{plotred}{HTML}{f08585}
+\definecolor{backgray}{HTML}{f0f0f0}
+
+\definecolor{plot1}{HTML}{5a7daf}
+\definecolor{plot2}{HTML}{6596c6}
+\definecolor{plot3}{HTML}{69b2ba}
+\definecolor{plot4}{HTML}{7dc5b6}
+\definecolor{plot5}{HTML}{c4e1ae}
+
+\begin{document}
+    
+\begin{tabular}{@{}cc@{}}
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.499\linewidth,
+    height=0.6\linewidth,
+    enlargelimits=false,
+    ymode = log,
+    xmode = log,
+    ymajorgrids=true,
+    xmajorgrids=true,
+    xlabel=smallest target angle,
+    ylabel=error,
+    ylabel near ticks,
+    ytick={1e0,1e-2,1e-4,1e-6,1e-8,1e-10,1e-12,1e-12,1e-14},
+    ymax = 10,
+    ymin = 1e-15,
+]
+  \addplot+[
+    line join=round,
+    no marks,
+    draw opacity=0.7,
+    style={ultra thick,solid,plotblue}
+    ]
+    table[col sep=comma,x index = 0,y index =1] {figures/extreme_angles/stat_file_extreme.txt};
+  \addplot+[
+    line join=round,
+    no marks,
+    draw opacity=0.7,
+    style={ultra thick,solid,plotred}
+    ]
+    table[col sep=comma,x index = 0,y index = 2] {figures/extreme_angles/stat_file_extreme.txt};
+\end{axis}
+\end{tikzpicture}
+&
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.499\linewidth,
+    height=0.6\linewidth,
+    enlargelimits=false,
+    ymode = log,
+    ymajorgrids=true,
+    xmajorgrids=true,
+    xlabel=largest target angle,
+    ylabel=,
+    ylabel near ticks,
+    ytick={1e0,1e-2,1e-4,1e-6,1e-8,1e-10,1e-12,1e-12,1e-14},
+    xtick = {10,100,200,300},
+    yticklabel pos=right,
+    ymax = 10,
+    ymin = 1e-15,
+]
+  \addplot+[
+    line join=round,
+    no marks,
+    draw opacity=0.6,
+    style={ultra thick,solid,plotblue}
+    ]
+    table[col sep=comma,x index = 0,y index=1] {figures/extreme_angles/stat_file_extreme_large.txt};
+  \addplot+[
+    line join=round,
+    no marks,
+    draw opacity=0.7,
+    style={ultra thick,solid,plotred}
+    ]
+    table[col sep=comma,x index = 0,y index = 2] {figures/extreme_angles/stat_file_extreme_large.txt};
+\end{axis}
+\end{tikzpicture}
+\end{tabular}
+
+
+\end{document}
+

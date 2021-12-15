@@ -1,0 +1,74 @@
+\documentclass{standalone}
+\usepackage{tikz} 
+\usepackage{comment}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{bm}
+\usepackage{color}
+\usepackage{nicefrac}
+\usepackage{dsfont}
+\usepackage[section]{placeins}
+\usepackage{tikz,pgfplots}
+\usepackage{overpic}
+\usepackage{wrapfig}
+\usepackage{rotating}
+
+\definecolor{commentgray}{gray}{0.5}
+\usepackage[ruled,vlined,noend]{algorithm2e}
+\usepackage{setspace}
+\newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{commentgray}{#1}}
+\SetCommentSty{mycommfont}
+\SetAlCapHSkip{1.1mm}
+
+%\usepackage{amssymb,amscd}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{csquotes}
+\usepackage{cleveref}
+
+\definecolor{plotblue}{HTML}{5a7daf}
+\definecolor{plotgreengreen}{HTML}{8ed659}
+\definecolor{plotgreen}{HTML}{8bc284}
+\definecolor{plotbluegreen}{HTML}{88aeaf}
+\definecolor{plotred}{HTML}{f08585}
+\definecolor{backgray}{HTML}{f0f0f0}
+
+\definecolor{plot1}{HTML}{5a7daf}
+\definecolor{plot2}{HTML}{6596c6}
+\definecolor{plot3}{HTML}{69b2ba}
+\definecolor{plot4}{HTML}{7dc5b6}
+\definecolor{plot5}{HTML}{c4e1ae}
+
+\begin{document}
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.99\linewidth,
+    height=0.45\linewidth,
+    enlargelimits=false,
+    ymajorgrids=true,
+    xmajorgrids=true,
+    xlabel= $\Delta$,
+    ylabel near ticks,
+    ytick={-0.09,-0.08, -0.07,-0.06,-0.05,-0.04,-0.03,-0.02},
+    yticklabel pos=left,
+    xmin = 0,
+    ymax = -0.02,
+    ymin = -0.09,
+    % restrict y to domain=-0.07:-0.02,
+]
+  \addplot+[
+    line join=round,
+    no marks,
+    draw opacity=0.6,
+    style={ultra thick,solid,plotblue}
+    ]
+    table[col sep=comma,x index = 0,y index=1] {\data_dir/projgrad_shift.txt};
+\end{axis}
+\end{tikzpicture}
+
+\end{document}
+
+

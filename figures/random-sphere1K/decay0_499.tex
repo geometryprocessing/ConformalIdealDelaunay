@@ -1,0 +1,76 @@
+\documentclass{standalone}
+\usepackage{tikz} 
+\usepackage{comment}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{bm}
+\usepackage{color}
+\usepackage{nicefrac}
+\usepackage{dsfont}
+\usepackage[section]{placeins}
+\usepackage{tikz,pgfplots}
+\usepackage{overpic}
+\usepackage{wrapfig}
+\usepackage{rotating}
+
+\definecolor{commentgray}{gray}{0.5}
+\usepackage[ruled,vlined,noend]{algorithm2e}
+\usepackage{setspace}
+\newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{commentgray}{#1}}
+\SetCommentSty{mycommfont}
+\SetAlCapHSkip{1.1mm}
+
+%\usepackage{amssymb,amscd}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{csquotes}
+\usepackage{cleveref}
+
+\definecolor{plotblue}{HTML}{5a7daf}
+\definecolor{plotgreengreen}{HTML}{8ed659}
+\definecolor{plotgreen}{HTML}{8bc284}
+\definecolor{plotbluegreen}{HTML}{88aeaf}
+\definecolor{plotred}{HTML}{f08585}
+\definecolor{backgray}{HTML}{f0f0f0}
+
+\definecolor{plot1}{HTML}{5a7daf}
+\definecolor{plot2}{HTML}{6596c6}
+\definecolor{plot3}{HTML}{69b2ba}
+\definecolor{plot4}{HTML}{7dc5b6}
+\definecolor{plot5}{HTML}{c4e1ae}
+
+\begin{document}
+\begin{tikzpicture}
+\begin{axis}[
+    width=1.0\linewidth,
+    height=0.8\linewidth,
+    enlargelimits=false,
+    ymode = log,
+    xmax = 30,
+    ymajorgrids=true,
+    xmajorgrids=true,
+    xminorgrids=true,
+    xlabel=Newton steps,
+    ylabel=error,
+    ylabel near ticks,
+    xtick = {0,5,10,15,20,25,30},
+    %restrict y to domain=-100:3,
+    ytick={1e0,1e-2,1e-4,1e-6,1e-8,1e-10,1e-12,1e-14},
+    ymin=2e-16,
+    ymax=4
+]
+\foreach \j in {0,...,499} % 999
+  \addplot+[
+    no marks,
+    draw opacity=0.03,
+    style={ultra thick,solid,plotblue}
+    ]
+    table[col sep=comma,x expr=\coordindex,y index ={\j}] {\data_dir/stat_file_decay_random.txt};
+
+\end{axis}
+\end{tikzpicture}
+
+\end{document}
+

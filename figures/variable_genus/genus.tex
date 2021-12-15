@@ -1,0 +1,74 @@
+\documentclass{standalone}
+\usepackage{tikz} 
+\usepackage{comment}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{bm}
+\usepackage{color}
+\usepackage{nicefrac}
+\usepackage{dsfont}
+\usepackage[section]{placeins}
+\usepackage{tikz,pgfplots}
+\usepackage{overpic}
+\usepackage{wrapfig}
+\usepackage{rotating}
+
+\definecolor{commentgray}{gray}{0.5}
+\usepackage[ruled,vlined,noend]{algorithm2e}
+\usepackage{setspace}
+\newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{commentgray}{#1}}
+\SetCommentSty{mycommfont}
+\SetAlCapHSkip{1.1mm}
+
+%\usepackage{amssymb,amscd}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{csquotes}
+\usepackage{cleveref}
+
+\definecolor{plotblue}{HTML}{5a7daf}
+\definecolor{plotgreengreen}{HTML}{8ed659}
+\definecolor{plotgreen}{HTML}{8bc284}
+\definecolor{plotbluegreen}{HTML}{88aeaf}
+\definecolor{plotred}{HTML}{f08585}
+\definecolor{backgray}{HTML}{f0f0f0}
+
+\definecolor{plot1}{HTML}{5a7daf}
+\definecolor{plot2}{HTML}{6596c6}
+\definecolor{plot3}{HTML}{69b2ba}
+\definecolor{plot4}{HTML}{7dc5b6}
+\definecolor{plot5}{HTML}{c4e1ae}
+
+\begin{document}
+\begin{tikzpicture}
+\begin{axis}[
+    width=1.0\linewidth,
+    height=0.5\linewidth,
+    enlargelimits=false,
+    ymode = log,
+    ymajorgrids=true,
+    xmajorgrids=true,
+    xlabel=genus,
+    ylabel=error,
+    ylabel near ticks,
+    ytick={1e0,1e-4,1e-8,1e-12},
+    ymax = 500,
+    ymin = 1e-15,
+    xmin = 0.5,
+    xmax = 13.5
+]
+  \addplot+[
+    mark=*,
+    only marks,
+    fill opacity=0.85,
+    draw opacity=0,
+    mark options={fill=plotblue}
+    ]
+    table[col sep=comma,x index = 0,y index =1] {\data_dir/stat_file_genus.txt};
+\end{axis}
+\end{tikzpicture}
+
+\end{document}
+

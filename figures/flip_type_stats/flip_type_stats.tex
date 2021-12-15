@@ -1,0 +1,119 @@
+\documentclass{standalone}
+\usepackage{tikz} 
+\usepackage{comment}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{bm}
+\usepackage{color}
+\usepackage{nicefrac}
+\usepackage{dsfont}
+\usepackage[section]{placeins}
+\usepackage{tikz,pgfplots}
+\usepackage{overpic}
+\usepackage{wrapfig}
+\usepackage{rotating}
+
+\definecolor{commentgray}{gray}{0.5}
+\usepackage[ruled,vlined,noend]{algorithm2e}
+\usepackage{setspace}
+\newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{commentgray}{#1}}
+\SetCommentSty{mycommfont}
+\SetAlCapHSkip{1.1mm}
+
+%\usepackage{amssymb,amscd}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{csquotes}
+\usepackage{cleveref}
+
+\definecolor{plotblue}{HTML}{5a7daf}
+\definecolor{plotgreengreen}{HTML}{8ed659}
+\definecolor{plotgreen}{HTML}{8bc284}
+\definecolor{plotbluegreen}{HTML}{88aeaf}
+\definecolor{plotred}{HTML}{f08585}
+\definecolor{backgray}{HTML}{f0f0f0}
+
+\definecolor{plot1}{HTML}{5a7daf}
+\definecolor{plot2}{HTML}{6596c6}
+\definecolor{plot3}{HTML}{69b2ba}
+\definecolor{plot4}{HTML}{7dc5b6}
+\definecolor{plot5}{HTML}{c4e1ae}
+
+\begin{document}
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=1.0\linewidth,
+    height=0.8\linewidth,
+    enlargelimits=false,
+    ymode = log,
+   % xmode = log,
+    ymajorgrids=true,
+    xmajorgrids=true,
+    xlabel=boundary curvature range,
+    ylabel=flips,
+    ylabel near ticks,
+    xmin=0,
+    xmax=1,
+    ymax=5e3,
+    xtick={0,0.5,1},
+    xticklabels={0,$\pm\frac{\pi}{2}$,$\pm\pi$},
+    clip=false,
+    legend pos=north west
+]
+\addlegendimage{only marks, mark=*, fill opacity=0.85, draw opacity=0, mark options={fill=plot1}}
+\addlegendimage{only marks, mark=*, fill opacity=0.75, draw opacity=0, mark options={fill=plot3}}
+\addlegendimage{only marks, mark=*, fill opacity=1.0, draw opacity=0, mark options={fill=plot5}}
+\addplot+[
+    only marks,
+   % scatter,
+    mark=*,
+    mark size=1.4pt,
+    fill opacity=0.35,
+    draw opacity=0,
+    mark options={fill=plot1}
+    ]
+table[x=fac, y =flips12, col sep=comma]
+{figures/flip_type_stats/stat_file_boundary_random_data.txt};
+\addlegendentry{\small$(1,1,1)+(2,2,2)\;\leftrightarrow\; (1,1,1)+(2,2,2)$}
+\addplot+[
+    only marks,
+   % scatter,
+    mark=*,
+    mark size=1.4pt,
+    fill opacity=0.35,
+    draw opacity=0,
+    mark options={fill=plot3}
+    ]
+table[x=fac, y =flipss, col sep=comma]
+{figures/flip_type_stats/stat_file_boundary_random_data.txt};
+\addlegendentry{\small$(1,\parallel,2)\;\leftrightarrow\; (t,\perp,t)$}
+\addplot+[
+    only marks,
+   % scatter,
+    mark=*,
+    mark size=1.4pt,
+    fill opacity=0.4,
+    draw opacity=0,
+    mark options={fill=plot5}
+    ]
+table[x=fac, y =flipst, col sep=comma]
+{figures/flip_type_stats/stat_file_boundary_random_data.txt};
+\addlegendentry{\small$(1,1,s)+(2,2,s)\;\leftrightarrow\; (s,\perp,s)$\phantom{$+(2,2,s)$.}}
+\addplot+[
+    only marks,
+   % scatter,
+    mark=*,
+    mark size=1.4pt,
+    fill opacity=0.4,
+    draw opacity=0,
+    mark options={fill=plot5}
+    ]
+table[x=fac, y =flipsq, col sep=comma]
+{\data_dir/stat_file_boundary_random_data.txt};
+\end{axis}
+\end{tikzpicture}
+
+\end{document}

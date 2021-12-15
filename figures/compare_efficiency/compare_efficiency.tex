@@ -1,0 +1,109 @@
+\documentclass{standalone}
+\usepackage{tikz} 
+\usepackage{comment}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{bm}
+\usepackage{color}
+\usepackage{nicefrac}
+\usepackage{dsfont}
+\usepackage[section]{placeins}
+\usepackage{tikz,pgfplots}
+\usepackage{overpic}
+\usepackage{wrapfig}
+\usepackage{rotating}
+
+\definecolor{commentgray}{gray}{0.5}
+\usepackage[ruled,vlined,noend]{algorithm2e}
+\usepackage{setspace}
+\newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{commentgray}{#1}}
+\SetCommentSty{mycommfont}
+\SetAlCapHSkip{1.1mm}
+
+%\usepackage{amssymb,amscd}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{csquotes}
+\usepackage{cleveref}
+
+\definecolor{plotblue}{HTML}{5a7daf}
+\definecolor{plotgreengreen}{HTML}{8ed659}
+\definecolor{plotgreen}{HTML}{8bc284}
+\definecolor{plotbluegreen}{HTML}{88aeaf}
+\definecolor{plotred}{HTML}{f08585}
+\definecolor{backgray}{HTML}{f0f0f0}
+
+\definecolor{plot1}{HTML}{5a7daf}
+\definecolor{plot2}{HTML}{6596c6}
+\definecolor{plot3}{HTML}{69b2ba}
+\definecolor{plot4}{HTML}{7dc5b6}
+\definecolor{plot5}{HTML}{c4e1ae}
+
+\begin{document}
+
+
+\pgfplotsset{
+  log x ticks with fixed point/.style={
+      xticklabel={
+        \pgfkeys{/pgf/fpu=true}
+        \pgfmathparse{exp(\tick)}%
+        \pgfmathprintnumber[fixed relative, precision=3]{\pgfmathresult}
+        \pgfkeys{/pgf/fpu=false}
+      }
+  }
+}
+  
+\begin{tikzpicture}
+\begin{axis}[
+    width=1.0\linewidth,
+    height=0.62\linewidth,
+    enlargelimits=false,
+    ymode = log,
+    xmode = log,
+    xmin=0,
+    xmax=400,
+    ymin=0.4,
+    ymax= 1000000,
+    ymajorgrids=true,
+    xmajorgrids=true,
+    xlabel=time (s),
+    ylabel=number of flips,
+    ylabel near ticks,
+    log x ticks with fixed point,
+    clip=false
+]
+\addplot+[
+    only marks,
+   % scatter,
+    mark=*,
+    mark size=2.8pt,
+    fill opacity=0.1,
+    draw opacity=0,
+    mark options={fill=plotblue}
+    ]
+table[x=time, y expr={max(\thisrow{n_flips},0.54)}, col sep=comma, restrict expr to domain={\thisrow{type}}{0:0}]
+{\data_dir/stat_file_flips.txt};
+\addplot+[
+    only marks,
+   % scatter,
+    mark=*,
+    mark size=2.0pt,
+    fill opacity=0.1,
+    draw opacity=0,
+    mark options={fill=plotred}
+    ]
+table[x=time, y expr={max(\thisrow{n_flips},0.5)}, col sep=comma, restrict expr to domain={\thisrow{type}}{1:1}]
+{\data_dir/stat_file_flips.txt};
+\node[] at (axis cs: 1.9,350000) {Ours};
+\node[] at (axis cs: 41,20) {[Campen and Zorin 2017]};
+\draw [dashed, draw=plotblue, line width=0.5mm] (axis cs: 0.45,0.4) -- (axis cs: 0.45,1000000);
+\draw [dashed, draw=plotred, line width=0.4mm] (axis cs: 31.3,0.4) -- (axis cs: 31.3,1000000); 
+\node[] at (axis cs: 0.45,2000000) {0.45s };
+\node[] at (axis cs: 31.3,2000000) {31.3s};
+\end{axis}
+\end{tikzpicture}
+
+\end{document}
+

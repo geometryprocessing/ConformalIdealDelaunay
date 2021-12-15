@@ -1,0 +1,10 @@
+[submodule "ext/spdlog"]
+	path = ext/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "ext/pybind11"]
+	path = ext/pybind11
+	url = https://github.com/pybind/pybind11.git
+[submodule "ext/libigl"]
+	path = ext/libigl
+	url = https://github.com/libigl/libigl.git
+	branch = main

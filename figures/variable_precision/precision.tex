@@ -1,0 +1,132 @@
+\documentclass{standalone}
+\usepackage{tikz} 
+\usepackage{comment}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{bm}
+\usepackage{color}
+\usepackage{nicefrac}
+\usepackage{dsfont}
+\usepackage[section]{placeins}
+\usepackage{tikz,pgfplots}
+\usepackage{overpic}
+\usepackage{wrapfig}
+\usepackage{rotating}
+
+\definecolor{commentgray}{gray}{0.5}
+\usepackage[ruled,vlined,noend]{algorithm2e}
+\usepackage{setspace}
+\newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{commentgray}{#1}}
+\SetCommentSty{mycommfont}
+\SetAlCapHSkip{1.1mm}
+
+%\usepackage{amssymb,amscd}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{csquotes}
+\usepackage{cleveref}
+
+\newcommand*{\ve}[1]{\bm{#1}}
+\newcommand{\bZ}{\mathbb{Z}}
+\newcommand{\cT}{M}
+\newcommand{\tl}{\tilde\ell}
+\newcommand{\RV}{V}
+\newcommand{\SP}{SP }
+
+\definecolor{plotblue}{HTML}{5a7daf}
+\definecolor{plotgreengreen}{HTML}{8ed659}
+\definecolor{plotgreen}{HTML}{8bc284}
+\definecolor{plotbluegreen}{HTML}{88aeaf}
+\definecolor{plotred}{HTML}{f08585}
+\definecolor{backgray}{HTML}{f0f0f0}
+
+\definecolor{plot1}{HTML}{5a7daf}
+\definecolor{plot2}{HTML}{6596c6}
+\definecolor{plot3}{HTML}{69b2ba}
+\definecolor{plot4}{HTML}{7dc5b6}
+\definecolor{plot5}{HTML}{c4e1ae}
+
+\begin{document}
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=1.0\linewidth,
+    height=1.15\linewidth,
+    enlargelimits=false,
+    ymode=log,
+    xmin=0,
+    ymax=1e-10,
+    ymin=2e-45,
+    restrict y to domain=-200:-1,
+    ymajorgrids=true,
+    ylabel=error,
+    xlabel=$\max\ve{u}-\min\ve{u}$,
+    ylabel near ticks,
+    ytick={1e-10,1e-12,1e-14,1e-16,1e-18,1e-20,1e-22,1e-24,1e-26,1e-28,1e-30,1e-32,1e-34,1e-36,1e-38,1e-40,1e-42,1e-44}
+]
+\addplot+[
+    only marks,
+   % scatter,
+    mark=*,
+    mark size=2.0pt,
+    fill opacity=0.1,
+    draw opacity=0,
+    mark options={fill=plot1}
+    ]
+table[x=oom, y=max, col sep=comma, restrict expr to domain={\thisrow{prec}}{53:53}]
+{\data_dir/stat_file_oom_50.txt};
+\addplot+[
+    only marks,
+   % scatter,
+    mark=*,
+    mark size=2.0pt,
+    fill opacity=0.1,
+    draw opacity=0,
+    mark options={fill=plot1!50!plot3}
+    ]
+table[x=oom, y=max, col sep=comma, restrict expr to domain={\thisrow{prec}}{75:75}]
+{\data_dir/stat_file_oom_50.txt};
+\addplot+[
+    only marks,
+   % scatter,
+    mark=*,
+    mark size=2.0pt,
+    fill opacity=0.1,
+    draw opacity=0,
+    mark options={fill=plot3}
+    ]
+table[x=oom, y=max, col sep=comma, restrict expr to domain={\thisrow{prec}}{100:100}]
+{\data_dir/stat_file_oom_50.txt};
+\addplot+[
+    only marks,
+   % scatter,
+    mark=*,
+    mark size=2.0pt,
+    fill opacity=0.1,
+    draw opacity=0,
+    mark options={fill=plot3!50!plot5}
+    ]
+table[x=oom, y=max, col sep=comma, restrict expr to domain={\thisrow{prec}}{125:125}]
+{\data_dir/stat_file_oom_50.txt};
+\addplot+[
+    only marks,
+   % scatter,
+    mark=*,
+    mark size=2.0pt,
+    fill opacity=0.1,
+    draw opacity=0,
+    mark options={fill=plot5}
+    ]
+table[x=oom, y=max, col sep=comma, restrict expr to domain={\thisrow{prec}}{150:150}]
+{\data_dir/stat_file_oom_50.txt};
+\node[] at (axis cs: 5,3e-13) {53 bit};
+\node[] at (axis cs: 5,8e-20) {75 bit};
+\node[] at (axis cs: 5,9e-28) {100 bit};
+\node[] at (axis cs: 5,5e-35) {125 bit};
+\node[] at (axis cs: 5,2e-42) {150 bit};
+\end{axis}
+\end{tikzpicture}
+\end{document}
+
