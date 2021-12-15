@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - fix_ci
   pull_request:
     branches:
       - master
@@ -81,3 +82,55 @@ jobs:
       # and build directories, but this is only available with CMake 3.13 and higher.  
       # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
       run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+
+  Windows:
+    name: Windows (${{ matrix.config }})
+    runs-on: windows-2019
+    env:
+      CC: cl.exe
+      CXX: cl.exe
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [Release]
+    steps:
+      - name: Stetup Conda
+        uses: conda-incubator/setup-miniconda@v2
+
+      - name: Install Dependencies
+        shell: powershell
+        run: |
+          conda install -c conda-forge mpfr boost-cpp -y
+      
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - uses: seanmiddleditch/gha-setup-ninja@master
+
+      - name: Set env
+        run: |
+          echo "appdata=$env:LOCALAPPDATA" >> ${env:GITHUB_ENV}
+          echo "GMP_INC=C:\Miniconda\Library\include" >> ${env:GITHUB_ENV}
+          echo "MPFR_INC=C:\Miniconda\Library\include" >> ${env:GITHUB_ENV}
+          echo "GMP_LIB=C:\Miniconda\Library\lib" >> ${env:GITHUB_ENV}
+      - name: Cache build
+        id: cache-build
+        uses: actions/cache@v1
+        with:
+          path: ${{ env.appdata }}\Mozilla\sccache
+          key: ${{ runner.os }}-${{ matrix.config }}-${{ matrix.static }}-cache
+
+      - name: Prepare sccache
+        run: |
+          Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
+          scoop install sccache --global
+          # Scoop modifies the PATH so we make it available for the next steps of the job
+          echo "${env:PATH}" >> ${env:GITHUB_PATH}
+        # We run configure + build in the same step, since they both need to call VsDevCmd
+        # Also, cmd uses ^ to break commands into multiple lines (in powershell this is `)
+      - name: Configure and build
+        shell: powershell
+        run: |
+          cmake -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DCMAKE_BUILD_TYPE=${{ matrix.config }} -B build -S . -DIGL_STATIC_RUNTIME=ON
+          cmake --build build --config ${{ matrix.config }}
