@@ -90,7 +90,8 @@ struct AlgorithmParameters {
   double min_lambda = 1e-16;     // terminate if lambda drops below this threshold
   double newton_decr_thres = 0;  // terminate if the newton decrement is above this threshold (it is negative)
   int max_itr = 500;             // upper bound for newton iterations
-  bool bypass_overlay = false;       // avoid overlay computation
+  bool bypass_overlay = false;   // avoid overlay computation
+  int layout_root = -1;          // select vertex on boundary as root for constructing spanning tree connecting cones
  };
 
 // Scalar: a floating point type, either double or MPFR
