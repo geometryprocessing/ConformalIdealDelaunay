@@ -278,7 +278,7 @@ std::tuple<std::vector<Scalar>, std::vector<Scalar>, std::vector<bool>,
       if (n_visited == singularities.size())
         break;
       vertex_queue.erase(vertex_queue.begin());
-
+      if (root != -1 && u != root && std::find(bd.begin(), bd.end(), u) != bd.end()) continue;
       int h0 = m_o.out[u];
       if (f_type[m_o.f[h0]] == 2)
       {

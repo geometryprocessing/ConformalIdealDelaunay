@@ -76,7 +76,9 @@ PYBIND11_MODULE(conformal_py, m)
     .def_readwrite("min_lambda", &AlgorithmParameters::min_lambda)
     .def_readwrite("newton_decr_thres", &AlgorithmParameters::newton_decr_thres)
     .def_readwrite("max_itr", &AlgorithmParameters::max_itr)
-    .def_readwrite("bypass_overlay", &AlgorithmParameters::bypass_overlay);
+    .def_readwrite("bypass_overlay", &AlgorithmParameters::bypass_overlay)
+    .def_readwrite("layout_root", &AlgorithmParameters::layout_root);
+
   pybind11::class_<StatsParameters, std::shared_ptr<StatsParameters>>(m, "StatsParameters")
     .def(pybind11::init<>())
     .def_readwrite("flip_count", &StatsParameters::flip_count)
