@@ -679,8 +679,13 @@ conformal_metric_CL(const Eigen::MatrixXd &V,
         bd[i] = vtx_reindex_rev[bd[i]];
     }
 
+    int root = -1;
+    if(alg_params->layout_root != -1){
+        root = vtx_reindex_rev[alg_params->layout_root];
+    }
+
     // get layout
-    auto layout_res = get_layout(mo, u, bd, cones, do_trim);
+    auto layout_res = get_layout(mo, u, bd, cones, do_trim, root);
     auto u_o = std::get<3>(layout_res);
     auto v_o = std::get<4>(layout_res);
 
@@ -772,13 +777,18 @@ conformal_metric_VL(const Eigen::MatrixXd &V,
     {
         cones[i] = vtx_reindex_rev[cones[i]];
     }
+
+    int root = -1;
+    if(alg_params->layout_root != -1)
+        root = vtx_reindex_rev[alg_params->layout_root];
+
     for (int i = 0; i < bd.size(); i++)
     {
         bd[i] = vtx_reindex_rev[bd[i]];
     }
 
     // get layout
-    auto layout_res = get_layout(mo, u, bd, cones, do_trim);
+    auto layout_res = get_layout(mo, u, bd, cones, do_trim, root);
     auto u_o = std::get<3>(layout_res);
     auto v_o = std::get<4>(layout_res);
     auto is_cut_o = std::get<5>(layout_res);
@@ -887,13 +897,16 @@ conformal_parametrization_CL(const Eigen::MatrixXd &V,
     {
         cones[i] = vtx_reindex_rev[cones[i]];
     }
+    int root = -1;
+    if(alg_params->layout_root != -1)
+        root = vtx_reindex_rev[alg_params->layout_root];
     for (int i = 0; i < bd.size(); i++)
     {
         bd[i] = vtx_reindex_rev[bd[i]];
     }
 
     // get layout
-    auto layout_res = get_layout(mo, u, bd, cones, do_trim);
+    auto layout_res = get_layout(mo, u, bd, cones, do_trim, root);
     auto u_o = std::get<3>(layout_res);
     auto v_o = std::get<4>(layout_res);
 
@@ -983,6 +996,11 @@ conformal_parametrization_VL(const Eigen::MatrixXd &V,
     {
         cones[i] = vtx_reindex_rev[cones[i]];
     }
+
+    int root = -1;
+    if(alg_params->layout_root != -1)
+        root = vtx_reindex_rev[alg_params->layout_root];
+
     for (int i = 0; i < bd.size(); i++)
     {
         bd[i] = vtx_reindex_rev[bd[i]];
@@ -993,7 +1011,7 @@ conformal_parametrization_VL(const Eigen::MatrixXd &V,
     spdlog::info("mc.out size: {}", mo.cmesh().out.size());
 
     // get layout
-    auto layout_res = get_layout(mo, u, bd, cones, do_trim);
+    auto layout_res = get_layout(mo, u, bd, cones, do_trim, root);
     auto u_o = std::get<3>(layout_res);
     auto v_o = std::get<4>(layout_res);
     auto is_cut_o = std::get<5>(layout_res);
