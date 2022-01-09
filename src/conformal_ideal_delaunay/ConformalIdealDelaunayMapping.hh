@@ -1128,11 +1128,11 @@ public:
 
     if(stats_params.print_summary){
       auto fname = stats_params.output_dir+"/summary_delaunay.csv";
-      auto header = "name, n_flips, max_error, time";
+      auto header = "name, n_flips, max_error, min_u, max_u, time";
       VectorX currentg;
       Gradient(mc, alpha, currentg, solve_stats);
       std::stringstream ss;
-      ss << stats_params.name << ", " <<delaunay_stats.n_flips << "," << currentg.cwiseAbs().maxCoeff()  << ", " << total_time;
+      ss << stats_params.name << ", " <<delaunay_stats.n_flips << "," << currentg.cwiseAbs().maxCoeff()  << ", " << u.minCoeff() << "," << u.maxCoeff() << "," << total_time;
       std::vector<std::string> content = {ss.str()};
       WriteLog(fname, content, header, true);
     }
