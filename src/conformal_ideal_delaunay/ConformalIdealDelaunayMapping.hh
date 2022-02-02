@@ -90,7 +90,8 @@ struct AlgorithmParameters {
   double min_lambda = 1e-16;     // terminate if lambda drops below this threshold
   double newton_decr_thres = 0;  // terminate if the newton decrement is above this threshold (it is negative)
   int max_itr = 500;             // upper bound for newton iterations
-  bool bypass_overlay = false;       // avoid overlay computation
+  bool bypass_overlay = false;   // avoid overlay computation
+  int layout_root = -1;          // select vertex on boundary as root for constructing spanning tree connecting cones
  };
 
 // Scalar: a floating point type, either double or MPFR
@@ -405,7 +406,7 @@ public:
    * @param Ptolemy, bool, when true the edge length is updated via ptolemy formula, otherwise using law of cosine.
    * @return bool, true indicates flip succeeds.
    */
-  static bool EdgeFlip(Mesh<Scalar>& m, const VectorX& u, int e, int tag, DelaunayStats& delaunay_stats, bool Ptolemy = true)
+  static bool EdgeFlip(std::set<int>& q, Mesh<Scalar>& m, const VectorX& u, int e, int tag, DelaunayStats& delaunay_stats, bool Ptolemy = true)
   {
     Mesh<Scalar>& mc = m.cmesh();
 
@@ -415,6 +416,12 @@ public:
     int hji = mc.h1(e);
     int him = mc.n[hji];
     int hmj = mc.n[him];
+
+    // Add edges of the boundary of the triangle flap to the set q
+    q.insert(mc.h0(hjk));
+    q.insert(mc.h0(hki));
+    q.insert(mc.h0(him));
+    q.insert(mc.h0(hmj));
 
     std::vector<char> &type = mc.type;
 
@@ -629,13 +636,13 @@ public:
     for (int i = 0; i < to_flip.size(); i++)
     {
       if (to_flip[i] == 1)
-        EdgeFlip(m, u, mc.e(hki), 2, delaunay_stats, Ptolemy);
+        EdgeFlip(q, m, u, mc.e(hki), 2, delaunay_stats, Ptolemy);
       if (to_flip[i] == 2)
-        EdgeFlip(m, u, mc.e(hjk), 2, delaunay_stats, Ptolemy);
+        EdgeFlip(q, m, u, mc.e(hjk), 2, delaunay_stats, Ptolemy);
       if (to_flip[i] == 5)
-        EdgeFlip(m, u, mc.e(him), 2, delaunay_stats, Ptolemy);
+        EdgeFlip(q, m, u, mc.e(him), 2, delaunay_stats, Ptolemy);
       if (to_flip[i] == 6)
-        EdgeFlip(m, u, mc.e(hmj), 2, delaunay_stats, Ptolemy);
+        EdgeFlip(q, m, u, mc.e(hmj), 2, delaunay_stats, Ptolemy);
     }
 
     return true;
@@ -675,7 +682,7 @@ public:
         int Re = -1;
         if (type0 == 1 && type1 == 1)
           Re = mc.e(mc.R[mc.h0(e)]);
-        if (!EdgeFlip(m, u, e, 0, delaunay_stats, Ptolemy))
+        if (!EdgeFlip(q, m, u, e, 0, delaunay_stats, Ptolemy))
           continue;
         int hn = mc.n[mc.h0(e)];
         q.insert(mc.e(hn));
@@ -688,7 +695,7 @@ public:
           int e = Re;
           if (Re == -1)
             spdlog::info("Negative index");
-          if (!EdgeFlip(m, u, e, 1, delaunay_stats, Ptolemy))
+          if (!EdgeFlip(q, m, u, e, 1, delaunay_stats, Ptolemy))
             continue;
           int hn = mc.n[mc.h0(e)];
           q.insert(mc.e(hn));
@@ -1127,11 +1134,11 @@ public:
 
     if(stats_params.print_summary){
       auto fname = stats_params.output_dir+"/summary_delaunay.csv";
-      auto header = "name, n_flips, max_error, time";
+      auto header = "name, n_flips, max_error, min_u, max_u, time";
       VectorX currentg;
       Gradient(mc, alpha, currentg, solve_stats);
       std::stringstream ss;
-      ss << stats_params.name << ", " <<delaunay_stats.n_flips << "," << currentg.cwiseAbs().maxCoeff()  << ", " << total_time;
+      ss << stats_params.name << ", " <<delaunay_stats.n_flips << "," << currentg.cwiseAbs().maxCoeff()  << ", " << u.minCoeff() << "," << u.maxCoeff() << "," << total_time;
       std::vector<std::string> content = {ss.str()};
       WriteLog(fname, content, header, true);
     }

@@ -76,7 +76,9 @@ PYBIND11_MODULE(conformal_py, m)
     .def_readwrite("min_lambda", &AlgorithmParameters::min_lambda)
     .def_readwrite("newton_decr_thres", &AlgorithmParameters::newton_decr_thres)
     .def_readwrite("max_itr", &AlgorithmParameters::max_itr)
-    .def_readwrite("bypass_overlay", &AlgorithmParameters::bypass_overlay);
+    .def_readwrite("bypass_overlay", &AlgorithmParameters::bypass_overlay)
+    .def_readwrite("layout_root", &AlgorithmParameters::layout_root);
+
   pybind11::class_<StatsParameters, std::shared_ptr<StatsParameters>>(m, "StatsParameters")
     .def(pybind11::init<>())
     .def_readwrite("flip_count", &StatsParameters::flip_count)
@@ -193,9 +195,19 @@ PYBIND11_MODULE(conformal_py, m)
     pybind11::call_guard<pybind11::scoped_ostream_redirect,
     pybind11::scoped_estream_redirect>());
 #endif
-  m.def("get_layout_double", &get_layout<double>, "get layout");
+  m.def("get_layout_double", &get_layout<double>, "get layout", 
+    pybind11::arg("m"), pybind11::arg("u"), pybind11::arg("bd"), 
+    pybind11::arg("singularities"), pybind11::arg("do_trim") = false,
+    pybind11::arg("root") = -1,
+    pybind11::call_guard<pybind11::scoped_ostream_redirect,
+    pybind11::scoped_estream_redirect>());
 #ifdef WITH_MPFR
-  m.def("get_layout_mpf", &get_layout<mpfr::mpreal>, "get layout");
+  m.def("get_layout_mpf", &get_layout<mpfr::mpreal>, "get layout",
+    pybind11::arg("m"), pybind11::arg("u"), pybind11::arg("bd"), 
+    pybind11::arg("singularities"), pybind11::arg("do_trim") = false,
+    pybind11::arg("root") = -1,
+    pybind11::call_guard<pybind11::scoped_ostream_redirect,
+    pybind11::scoped_estream_redirect>());
 #endif
   // interface
   m.def("conformal_metric_cl_double", &conformal_metric_CL<double>, "get conformal metric, output: halfedge connectivity(n,opp), l(per halfedge)");

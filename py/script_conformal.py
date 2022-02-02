@@ -177,7 +177,7 @@ def do_conformal(m, dir, out, output_type="param", output_format="obj", use_mpf=
         with open(out + "/" + name + "_out.pickle", 'wb') as pf:
           pickle.dump((n, opp, u, v), pf)
       elif output_type == "param" and output_format == "obj":
-        vo, fo, u, v, ft = conformal_parametrization_vf_double(v3d, f, Th_hat, alg_params, ls_params, stats_params)
+        vo, fo, u, v, ft, fn_to_f = conformal_parametrization_vf_double(v3d, f, Th_hat, alg_params, ls_params, stats_params)
         write_texture_obj_double(out + "/" + name + "_out.obj", vo, fo, u, v, ft)
       elif output_type == "render" and output_format == "png": # for texture rendering
         m_o, u, pt_fids, pt_bcs, reindex, _ = conformal_metric_double(v3d, f, Th_hat, pt_fids, pt_bcs, alg_params, ls_params, stats_params);

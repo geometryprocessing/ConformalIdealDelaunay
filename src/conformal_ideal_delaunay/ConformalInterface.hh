@@ -484,14 +484,80 @@ get_FV(OverlayMesh<Scalar> &mo,
 }
 
 
+/**
+ * Compute the map between faces in overlay mesh and original mesh
+ * @param mo OverlayMesh data structure
+ * @param Fn_to_F map from each overlay mesh face to the id of original mesh face id that contains it
+ */ 
+template <typename Scalar>
+void build_face_maps(OverlayMesh<Scalar>& mo, std::vector<int>& Fn_to_F){
+    
+    Fn_to_F = std::vector<int>(mo.n_faces(), -1);
+    
+    // start from the face of halfedge h and do a breath first search to reach as
+    // many faces as possible while only going across CURRENT_EDGE
+    // the vector `compo` contains all sub-faces that correspoinding to the same original face
+    auto flood_fill = [](OverlayMesh<Scalar>& mo, int h, std::vector<int>& compo){
+        compo.clear();
+        auto done = std::vector<bool>(mo.n_faces(), false);
+        std::queue<int> Q; Q.push(h);
+        done[mo.f[h]] = true;
+        while (!Q.empty())
+        {
+            h = Q.front();
+            Q.pop();
+            // traverse all adjacent faces while only going through CURRENT_EDGE
+            int hi = h;
+            do{
+                int hi_opp = mo.opp[hi];
+                if (mo.f[hi_opp] != -1 && !done[mo.f[hi_opp]] && mo.edge_type[hi] == CURRENT_EDGE)
+                {
+                    done[mo.f[hi_opp]] = true;
+                    Q.push(hi_opp);
+                }
+                hi = mo.n[hi];
+            }while(h != hi);
+        }
+        for(int f = 0; f < done.size(); f++)
+            if(done[f])
+                compo.push_back(f);
+    };
+    
+    for(int i = 0; i < mo.n_halfedges(); i++){
+        if(mo.edge_type[i] == ORIGINAL_EDGE){
+            if(mo.origin[i] != mo.origin_of_origin[i]){
+                mo.origin_of_origin[i] = mo.origin[i];
+            }
+        }
+    }
+    // go through all faces and pick any halfedge in that face
+    // find all 'sibling' faces that belong to the same original face
+    for(int f = 0; f < mo.n_faces(); f++){
+        int h0 = mo.h[f];
+        std::vector<int> compo;
+        flood_fill(mo, h0, compo);
+        for(int fx: compo){
+            int h1 = mo.h[fx];
+            int hi = h1;
+            do{
+                if(mo.edge_type[hi] != CURRENT_EDGE) break;
+                hi = mo.n[hi];
+            }while(hi != h1);
+            int fi = mo.m0.f[mo.origin_of_origin[hi]];
+            Fn_to_F[fx] = fi;
+        }
+    }
+
+}
+
 template<typename Scalar>
 std::tuple<
         std::vector<std::vector<Scalar>>,   // v3d_out
         std::vector<Scalar>,                // u_out
         std::vector<Scalar>,                // v_out
         std::vector<std::vector<int>>,      // F_out
-        std::vector<std::vector<int>>       // FT_out
->
+        std::vector<std::vector<int>>,      // FT_out
+        std::vector<int>>                   // Fn_to_F
 get_FV_FTVT(OverlayMesh<Scalar> &mo,
             std::vector<bool> &is_cut_o,
             const std::vector<std::vector<Scalar>> v3d, 
@@ -562,9 +628,12 @@ get_FV_FTVT(OverlayMesh<Scalar> &mo,
         v3d_out[1][i] = v3d[1][to_group[i]];
         v3d_out[2][i] = v3d[2][to_group[i]];
     }
-    
+    std::vector<int> Fn_to_F;
+    build_face_maps(mo, Fn_to_F);
+
     std::vector<std::vector<int>> F_out;
     std::vector<std::vector<int>> FT_out;
+    std::vector<int> f_remap; // map each face in F_out to mo
     for (int i = 0; i < mo.h.size(); i++)
     {
         if (f_labels[i] == 2) continue;
@@ -590,12 +659,19 @@ get_FV_FTVT(OverlayMesh<Scalar> &mo,
         }
         for (int j = 0; j < hf.size() - 2; j++)
         {
+            f_remap.push_back(i);
             FT_out.push_back(std::vector<int>{h_group[h0], h_group[hf[j + 1]], h_group[hf[j + 2]]});
             F_out.push_back(std::vector<int>{which_to_group[mo.to[h0]], which_to_group[mo.to[hf[j + 1]]], which_to_group[mo.to[hf[j + 2]]]});
         }
     }
 
-    return std::make_tuple(v3d_out, u_o_out, v_o_out, F_out, FT_out);
+    // after drop the second copy - update face map
+    std::vector<int> _Fn_to_F(F_out.size(), -1);
+    for(int i = 0; i < F_out.size(); i++)
+         _Fn_to_F[i] = Fn_to_F[f_remap[i]];
+    Fn_to_F = _Fn_to_F;
+
+    return std::make_tuple(v3d_out, u_o_out, v_o_out, F_out, FT_out, Fn_to_F);
 
 }
 
@@ -679,8 +755,13 @@ conformal_metric_CL(const Eigen::MatrixXd &V,
         bd[i] = vtx_reindex_rev[bd[i]];
     }
 
+    int root = -1;
+    if(alg_params->layout_root != -1){
+        root = vtx_reindex_rev[alg_params->layout_root];
+    }
+
     // get layout
-    auto layout_res = get_layout(mo, u, bd, cones, do_trim);
+    auto layout_res = get_layout(mo, u, bd, cones, do_trim, root);
     auto u_o = std::get<3>(layout_res);
     auto v_o = std::get<4>(layout_res);
 
@@ -772,13 +853,18 @@ conformal_metric_VL(const Eigen::MatrixXd &V,
     {
         cones[i] = vtx_reindex_rev[cones[i]];
     }
+
+    int root = -1;
+    if(alg_params->layout_root != -1)
+        root = vtx_reindex_rev[alg_params->layout_root];
+
     for (int i = 0; i < bd.size(); i++)
     {
         bd[i] = vtx_reindex_rev[bd[i]];
     }
 
     // get layout
-    auto layout_res = get_layout(mo, u, bd, cones, do_trim);
+    auto layout_res = get_layout(mo, u, bd, cones, do_trim, root);
     auto u_o = std::get<3>(layout_res);
     auto v_o = std::get<4>(layout_res);
     auto is_cut_o = std::get<5>(layout_res);
@@ -887,13 +973,16 @@ conformal_parametrization_CL(const Eigen::MatrixXd &V,
     {
         cones[i] = vtx_reindex_rev[cones[i]];
     }
+    int root = -1;
+    if(alg_params->layout_root != -1)
+        root = vtx_reindex_rev[alg_params->layout_root];
     for (int i = 0; i < bd.size(); i++)
     {
         bd[i] = vtx_reindex_rev[bd[i]];
     }
 
     // get layout
-    auto layout_res = get_layout(mo, u, bd, cones, do_trim);
+    auto layout_res = get_layout(mo, u, bd, cones, do_trim, root);
     auto u_o = std::get<3>(layout_res);
     auto v_o = std::get<4>(layout_res);
 
@@ -925,7 +1014,8 @@ std::tuple<
         std::vector<std::vector<int>>,          // F_out
         std::vector<Scalar>,                    // layout u (per vertex)
         std::vector<Scalar>,                    // layout v (per vertex)
-        std::vector<std::vector<int>>>          // FT_out                 
+        std::vector<std::vector<int>>,          // FT_out
+        std::vector<int>>                       // Fn_to_F
 conformal_parametrization_VL(const Eigen::MatrixXd &V,
                     const Eigen::MatrixXi &F,
                     const std::vector<Scalar> &Theta_hat,
@@ -968,7 +1058,7 @@ conformal_parametrization_VL(const Eigen::MatrixXd &V,
 
     if(mo.bypass_overlay){
         spdlog::warn("overlay bypassed due to numerical issue or as instructed.");
-        return std::make_tuple(std::vector<std::vector<Scalar>>(), std::vector<std::vector<int>>(), std::vector<Scalar>(), std::vector<Scalar>(), std::vector<std::vector<int>>());
+        return std::make_tuple(std::vector<std::vector<Scalar>>(), std::vector<std::vector<int>>(), std::vector<Scalar>(), std::vector<Scalar>(), std::vector<std::vector<int>>(), std::vector<int>());
     }
 
     std::vector<int> f_labels = get_overlay_face_labels(mo);
@@ -983,6 +1073,11 @@ conformal_parametrization_VL(const Eigen::MatrixXd &V,
     {
         cones[i] = vtx_reindex_rev[cones[i]];
     }
+
+    int root = -1;
+    if(alg_params->layout_root != -1)
+        root = vtx_reindex_rev[alg_params->layout_root];
+
     for (int i = 0; i < bd.size(); i++)
     {
         bd[i] = vtx_reindex_rev[bd[i]];
@@ -993,7 +1088,7 @@ conformal_parametrization_VL(const Eigen::MatrixXd &V,
     spdlog::info("mc.out size: {}", mo.cmesh().out.size());
 
     // get layout
-    auto layout_res = get_layout(mo, u, bd, cones, do_trim);
+    auto layout_res = get_layout(mo, u, bd, cones, do_trim, root);
     auto u_o = std::get<3>(layout_res);
     auto v_o = std::get<4>(layout_res);
     auto is_cut_o = std::get<5>(layout_res);
@@ -1005,6 +1100,7 @@ conformal_parametrization_VL(const Eigen::MatrixXd &V,
     auto v_o_out = std::get<2>(FVFT_res);
     auto F_out = std::get<3>(FVFT_res);
     auto FT_out = std::get<4>(FVFT_res);
+    auto Fn_to_F = std::get<5>(FVFT_res);
 
     // v3d_out = v3d^T
     std::vector<std::vector<Scalar>> v3d_out(v3d[0].size());
@@ -1042,7 +1138,7 @@ conformal_parametrization_VL(const Eigen::MatrixXd &V,
         v3d_out[vtx_reindex[i]] = v3d_out_copy[i];
     }
 
-    return std::make_tuple(v3d_out, F_out, u_o_out, v_o_out, FT_out);
+    return std::make_tuple(v3d_out, F_out, u_o_out, v_o_out, FT_out, Fn_to_F);
 }
 
 /**
