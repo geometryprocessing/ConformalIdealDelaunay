@@ -41,7 +41,7 @@
 #include <vector>
 #include <igl/cat.h>
 #include <igl/boundary_loop.h>
-#include "../util/plot.h"
+#include "../util/plot.hh"
 
 typedef std::tuple< Eigen::Matrix4f,
                     Eigen::Matrix4f,
