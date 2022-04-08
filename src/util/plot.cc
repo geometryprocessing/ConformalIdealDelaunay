@@ -30,7 +30,7 @@
 *                                          *                                     *
 *********************************************************************************/
 
-#include "plot.h"
+#include "plot.hh"
 #include <igl/avg_edge_length.h>
 #include <igl/boundary_loop.h>
 #include <igl/doublearea.h>

@@ -275,6 +275,7 @@ namespace OverlayProblem{
 
         std::vector< std::vector<Scalar> > seg_bcs; // seg_bcs[h] := bc of to[h] on origin[h]
 
+        Mesh<Scalar> m0;                     // init mesh before any changes
         Mesh<Scalar> _m;                     // current non-overlay mesh
         bool bypass_overlay = false;         // when this flag is marked it means higher precision is needed for layout & overlay
 
@@ -299,6 +300,8 @@ namespace OverlayProblem{
             this->h = _m.h;
             this->opp = _m.opp;
             this->out = _m.out;
+
+            m0 = m;
 
             this->prev = {};
             for (int h = 0; h < _m.n_halfedges(); h++) {

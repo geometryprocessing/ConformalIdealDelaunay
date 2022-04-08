@@ -40,6 +40,7 @@
 #include "ConformalIdealDelaunayMapping.hh"
 #include "Halfedge.hh"
 #include "Layout.hh"
+#include "check_flip.hh"
 #include <igl/boundary_loop.h>
 #include <igl/is_border_vertex.h>
 #include <igl/edges.h>
@@ -173,6 +174,44 @@ std::pair<int,int> count_genus_and_boundary(const Eigen::MatrixXd& V, const Eige
   return std::make_pair(n_genus, n_bd);
 }
 
+template <typename Scalar>
+void find_origin_endpoints(OverlayMesh<Scalar>& mo, std::vector<std::pair<int, int>>& endpoints){
+
+    endpoints = std::vector<std::pair<int,int>>(mo.n_vertices(), std::make_pair(-1, -1));
+    std::vector<bool> done(mo.n_vertices(), false);
+    for(int i = 0; i < mo.n.size(); i++){
+        if (mo.edge_type[i] != ORIGINAL_EDGE)
+            continue;
+        int j = mo.opp[i];
+        int a = mo.find_end_origin(i);
+        int b = mo.find_end_origin(j);
+        int v0 = mo.to[i], v1 = mo.to[j];
+        if(mo.vertex_type[v0] != ORIGINAL_VERTEX){
+            if(!done[v0]){
+                endpoints[v0] = std::make_pair(a, b);
+                done[v0] = true;
+            }
+        }
+        if(mo.vertex_type[v1] != ORIGINAL_VERTEX){
+            if(!done[v1]){
+                endpoints[v1] = std::make_pair(a, b);
+                done[v1] = true;
+            }
+        }
+    }
+    // sanity check: all new vertices should have non-negative endpoints assigned
+    for(int i = 0; i < mo.n_vertices(); i++){
+        if(mo.vertex_type[i] != ORIGINAL_VERTEX){
+            int a = endpoints[i].first, b = endpoints[i].second;
+            if(a == -1 || b == -1){
+                spdlog::error("new vertex {} has no endpoints assigned!", i);
+                exit(0);
+            }
+        }
+    }
+    
+}
+
 /**
  * Top level c++ interface of conformal ideal delaunay algorithm.
  * This function computes a conformal metric for the input triangle mesh 
@@ -200,7 +239,8 @@ std::tuple<
            std::vector<int>,                        // pt_fids
            std::vector<std::vector<Scalar>>,        // pt_bcs
            std::vector<int>,                        // vtx_reindex
-           std::vector<std::vector<Scalar>>>        // V_overlay
+           std::vector<std::vector<Scalar>>,        // V_overlay
+           std::vector<std::pair<int,int>>>         // map new vertices to the correct endpoints
 conformal_metric(const Eigen::MatrixXd &V,
                     const Eigen::MatrixXi &F,
                     const std::vector<Scalar> &Theta_hat,
@@ -271,7 +311,9 @@ conformal_metric(const Eigen::MatrixXd &V,
             pt_bcs_out[i].push_back(pt_bcs_scalar[i](j));
         }
     }
-    return std::make_tuple(mo, u, pt_fids, pt_bcs_out, vtx_reindex, V_overlay); 
+    std::vector<std::pair<int,int>> endpoints;
+    find_origin_endpoints(mo, endpoints);
+    return std::make_tuple(mo, u, pt_fids, pt_bcs_out, vtx_reindex, V_overlay, endpoints); 
 
 }
 
@@ -484,15 +526,83 @@ get_FV(OverlayMesh<Scalar> &mo,
 }
 
 
+/**
+ * Compute the map between faces in overlay mesh and original mesh
+ * @param mo OverlayMesh data structure
+ * @param Fn_to_F map from each overlay mesh face to the id of original mesh face id that contains it
+ */ 
+template <typename Scalar>
+void build_face_maps(OverlayMesh<Scalar>& mo, std::vector<int>& Fn_to_F){
+    
+    Fn_to_F = std::vector<int>(mo.n_faces(), -1);
+    
+    // start from the face of halfedge h and do a breath first search to reach as
+    // many faces as possible while only going across CURRENT_EDGE
+    // the vector `compo` contains all sub-faces that correspoinding to the same original face
+    auto flood_fill = [](OverlayMesh<Scalar>& mo, int h, std::vector<int>& compo){
+        compo.clear();
+        auto done = std::vector<bool>(mo.n_faces(), false);
+        std::queue<int> Q; Q.push(h);
+        done[mo.f[h]] = true;
+        while (!Q.empty())
+        {
+            h = Q.front();
+            Q.pop();
+            // traverse all adjacent faces while only going through CURRENT_EDGE
+            int hi = h;
+            do{
+                int hi_opp = mo.opp[hi];
+                if (mo.f[hi_opp] != -1 && !done[mo.f[hi_opp]] && mo.edge_type[hi] == CURRENT_EDGE)
+                {
+                    done[mo.f[hi_opp]] = true;
+                    Q.push(hi_opp);
+                }
+                hi = mo.n[hi];
+            }while(h != hi);
+        }
+        for(int f = 0; f < done.size(); f++)
+            if(done[f])
+                compo.push_back(f);
+    };
+    
+    for(int i = 0; i < mo.n_halfedges(); i++){
+        if(mo.edge_type[i] == ORIGINAL_EDGE){
+            if(mo.origin[i] != mo.origin_of_origin[i]){
+                mo.origin_of_origin[i] = mo.origin[i];
+            }
+        }
+    }
+    // go through all faces and pick any halfedge in that face
+    // find all 'sibling' faces that belong to the same original face
+    for(int f = 0; f < mo.n_faces(); f++){
+        int h0 = mo.h[f];
+        std::vector<int> compo;
+        flood_fill(mo, h0, compo);
+        for(int fx: compo){
+            int h1 = mo.h[fx];
+            int hi = h1;
+            do{
+                if(mo.edge_type[hi] != CURRENT_EDGE) break;
+                hi = mo.n[hi];
+            }while(hi != h1);
+            int fi = mo.m0.f[mo.origin_of_origin[hi]];
+            Fn_to_F[fx] = fi;
+        }
+    }
+
+}
+
 template<typename Scalar>
 std::tuple<
         std::vector<std::vector<Scalar>>,   // v3d_out
         std::vector<Scalar>,                // u_out
         std::vector<Scalar>,                // v_out
         std::vector<std::vector<int>>,      // F_out
-        std::vector<std::vector<int>>       // FT_out
->
+        std::vector<std::vector<int>>,      // FT_out
+        std::vector<int>,                   // Fn_to_F
+        std::vector<std::pair<int,int>>>    // remapped endpoints relationship
 get_FV_FTVT(OverlayMesh<Scalar> &mo,
+            std::vector<std::pair<int,int>>& endpoints,
             std::vector<bool> &is_cut_o,
             const std::vector<std::vector<Scalar>> v3d, 
             const std::vector<Scalar> u_o,
@@ -562,9 +672,13 @@ get_FV_FTVT(OverlayMesh<Scalar> &mo,
         v3d_out[1][i] = v3d[1][to_group[i]];
         v3d_out[2][i] = v3d[2][to_group[i]];
     }
-    
+    std::vector<int> Fn_to_F;
+    build_face_maps(mo, Fn_to_F);
+
     std::vector<std::vector<int>> F_out;
     std::vector<std::vector<int>> FT_out;
+    std::vector<int> f_remap; // map each face in F_out to mo
+    auto remapped_endpoints = std::vector<std::pair<int,int>>(v3d_out.size(), std::make_pair(-1, -1));
     for (int i = 0; i < mo.h.size(); i++)
     {
         if (f_labels[i] == 2) continue;
@@ -590,12 +704,27 @@ get_FV_FTVT(OverlayMesh<Scalar> &mo,
         }
         for (int j = 0; j < hf.size() - 2; j++)
         {
+            f_remap.push_back(i);
             FT_out.push_back(std::vector<int>{h_group[h0], h_group[hf[j + 1]], h_group[hf[j + 2]]});
             F_out.push_back(std::vector<int>{which_to_group[mo.to[h0]], which_to_group[mo.to[hf[j + 1]]], which_to_group[mo.to[hf[j + 2]]]});
         }
     }
 
-    return std::make_tuple(v3d_out, u_o_out, v_o_out, F_out, FT_out);
+    for(int i = 0; i < endpoints.size(); i++){
+        int a = endpoints[i].first, b = endpoints[i].second;
+        if(a != -1 && b != -1){
+            if(which_to_group[i] < remapped_endpoints.size() && which_to_group[i] != -1) 
+                remapped_endpoints[which_to_group[i]] = std::make_pair(which_to_group[a], which_to_group[b]);
+        }
+    }
+
+    // after drop the second copy - update face map
+    std::vector<int> _Fn_to_F(F_out.size(), -1);
+    for(int i = 0; i < F_out.size(); i++)
+         _Fn_to_F[i] = Fn_to_F[f_remap[i]];
+    Fn_to_F = _Fn_to_F;
+
+    return std::make_tuple(v3d_out, u_o_out, v_o_out, F_out, FT_out, Fn_to_F, remapped_endpoints);
 
 }
 
@@ -938,7 +1067,9 @@ std::tuple<
         std::vector<std::vector<int>>,          // F_out
         std::vector<Scalar>,                    // layout u (per vertex)
         std::vector<Scalar>,                    // layout v (per vertex)
-        std::vector<std::vector<int>>>          // FT_out                 
+        std::vector<std::vector<int>>,          // FT_out
+        std::vector<int>,                       // Fn_to_F
+        std::vector<std::pair<int,int>>>        // map from new vertices to original endpoints
 conformal_parametrization_VL(const Eigen::MatrixXd &V,
                     const Eigen::MatrixXi &F,
                     const std::vector<Scalar> &Theta_hat,
@@ -978,10 +1109,11 @@ conformal_parametrization_VL(const Eigen::MatrixXd &V,
     std::vector<Scalar> u = std::get<1>(conformal_out);
     std::vector<int> vtx_reindex = std::get<4>(conformal_out);
     auto V_overlay = std::get<5>(conformal_out);
+    auto endpoints = std::get<6>(conformal_out);
 
     if(mo.bypass_overlay){
         spdlog::warn("overlay bypassed due to numerical issue or as instructed.");
-        return std::make_tuple(std::vector<std::vector<Scalar>>(), std::vector<std::vector<int>>(), std::vector<Scalar>(), std::vector<Scalar>(), std::vector<std::vector<int>>());
+        return std::make_tuple(std::vector<std::vector<Scalar>>(), std::vector<std::vector<int>>(), std::vector<Scalar>(), std::vector<Scalar>(), std::vector<std::vector<int>>(), std::vector<int>(), std::vector<std::pair<int,int>>());
     }
 
     std::vector<int> f_labels = get_overlay_face_labels(mo);
@@ -1017,12 +1149,14 @@ conformal_parametrization_VL(const Eigen::MatrixXd &V,
     auto is_cut_o = std::get<5>(layout_res);
 
     // get output VF and metric
-    auto FVFT_res = get_FV_FTVT(mo, is_cut_o, V_overlay, u_o, v_o);
+    auto FVFT_res = get_FV_FTVT(mo, endpoints, is_cut_o, V_overlay, u_o, v_o);
     auto v3d = std::get<0>(FVFT_res); 
     auto u_o_out = std::get<1>(FVFT_res);
     auto v_o_out = std::get<2>(FVFT_res);
     auto F_out = std::get<3>(FVFT_res);
     auto FT_out = std::get<4>(FVFT_res);
+    auto Fn_to_F = std::get<5>(FVFT_res);
+    auto remapped_endpoints = std::get<6>(FVFT_res);
 
     // v3d_out = v3d^T
     std::vector<std::vector<Scalar>> v3d_out(v3d[0].size());
@@ -1039,6 +1173,7 @@ conformal_parametrization_VL(const Eigen::MatrixXd &V,
     auto u_o_out_copy = u_o_out;
     auto v_o_out_copy = v_o_out;
     auto v3d_out_copy = v3d_out;
+    auto endpoints_out = remapped_endpoints;
     for (int i = 0; i < F_out.size(); i++)
     {
         for (int j = 0; j < 3; j++)
@@ -1059,8 +1194,28 @@ conformal_parametrization_VL(const Eigen::MatrixXd &V,
         v_o_out[vtx_reindex[i]] = v_o_out_copy[i];
         v3d_out[vtx_reindex[i]] = v3d_out_copy[i];
     }
+    for(int i = vtx_reindex.size(); i < endpoints_out.size(); i++)
+    {
+        int a = vtx_reindex[endpoints_out[i].first];
+        int b = vtx_reindex[endpoints_out[i].second];
+        endpoints_out[i] = std::make_pair(a, b);
+    }
+    
+    // check flips in the layout results
+    Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> uv_o(u_o_out.size(), 2);
+    Eigen::MatrixXi FT(FT_out.size(), 3);
+    for(int f = 0; f < FT_out.size(); f++)
+        FT.row(f) << FT_out[f][0], FT_out[f][1], FT_out[f][2];
+    for(int i = 0; i < uv_o.rows(); i++)
+        uv_o.row(i) << u_o_out[i], v_o_out[i];
+    spdlog::info("#flip: {}", check_flip(uv_o, FT, true));
 
-    return std::make_tuple(v3d_out, F_out, u_o_out, v_o_out, FT_out);
+    std::ofstream mf;
+    mf.open(stats_params->output_dir + "/flip_check.csv", std::ios_base::app);
+    mf << stats_params->name << "," << check_flip(uv_o, FT) << std::endl;
+    mf.close();
+
+    return std::make_tuple(v3d_out, F_out, u_o_out, v_o_out, FT_out, Fn_to_F, endpoints_out);
 }
 
 /**
