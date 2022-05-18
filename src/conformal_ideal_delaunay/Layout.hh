@@ -523,7 +523,7 @@ std::tuple<std::vector<Scalar>, std::vector<Scalar>, std::vector<bool>,
       {
         for (int i = 0; i < m_o.n.size(); i++)
         {
-          if (f_type[m_o.f[i]] == 1 && m_o.v0(i) == u)
+          if (f_type[m_o.f[i]] == 1 && m_o.v0(i) == u && m_o.edge_type[i] == ORIGINAL_AND_CURRENT_EDGE)
           {
             h0 = i;
             break;
@@ -534,7 +534,7 @@ std::tuple<std::vector<Scalar>, std::vector<Scalar>, std::vector<bool>,
 
       do
       {
-        if (m_o.edge_type[h] != ORIGINAL_EDGE && f_type[m_o.f[h]] == 1)
+        if (m_o.edge_type[h] == ORIGINAL_AND_CURRENT_EDGE && f_type[m_o.f[h]] == 1)
         {
           int v = m_o.to[h];
           int dist_v = dist_u + 1;
