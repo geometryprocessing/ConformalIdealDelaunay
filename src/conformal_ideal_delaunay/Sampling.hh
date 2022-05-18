@@ -160,10 +160,12 @@ cpp_viewer(Eigen::MatrixXd &V, Eigen::MatrixXi &F, Eigen::VectorXd &Th_hat,
     }
   }
   plot_singularity_sphere(viewer, V, F, S, pt_scale);
+
   if (show_bd)
   {
     show_boundary(viewer, V, F, bd_scale);
   }
+  
   viewer.append_mesh();
   viewer.data().set_mesh(V, F);
 
@@ -207,7 +209,7 @@ cpp_viewer(Eigen::MatrixXd &V, Eigen::MatrixXi &F, Eigen::VectorXd &Th_hat,
     red_size = f_red.rows();
     blue_size = f_blue.rows();
     spdlog::info("red_size: {}, blue_size: {}", red_size, blue_size);
-    if (show_bd && viewer.data_list.size() > 3)
+    if (show_bd && viewer.data_list.size() > 4)
     {
       spdlog::info("adding cuts for display.");
       auto v_bd = viewer.data(3).V;
